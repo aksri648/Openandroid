@@ -1,8 +1,11 @@
 import asyncio
+from datetime import datetime, timezone
 
 from auth import CurrentUser
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
+from database import get_project, insert_message, get_messages
 
 router = APIRouter()
 
@@ -15,10 +18,10 @@ class SendMessageRequest(BaseModel):
 async def send_message(project_id: str, body: SendMessageRequest, user: dict = CurrentUser):
     from opencode_ai import AsyncOpencode
 
-    from main import log_queues, projects_store, sandboxes_store
+    from main import log_queues, sandboxes_store
 
     user_id = user["user_id"]
-    project = projects_store.get(user_id, {}).get(project_id)
+    project = await get_project(user_id, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -26,6 +29,13 @@ async def send_message(project_id: str, body: SendMessageRequest, user: dict = C
     sandbox = sandboxes_store.get(project_id)
     if not session_id or not sandbox:
         raise HTTPException(status_code=400, detail="Project has no active sandbox")
+
+    # Save user message to MongoDB
+    await insert_message(project_id, {
+        "role": "user",
+        "content": body.text,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
 
     sandbox_base_url = await sandbox.get_preview_url(54321)
     opencode_client = AsyncOpencode(base_url=sandbox_base_url)
@@ -50,6 +60,12 @@ async def send_message(project_id: str, body: SendMessageRequest, user: dict = C
                         if part.get("type") == "text":
                             text = part.get("text", {}).get("value", "")
                             if text:
+                                # Save agent message to MongoDB
+                                await insert_message(project_id, {
+                                    "role": "assistant",
+                                    "content": text,
+                                    "created_at": datetime.now(timezone.utc).isoformat(),
+                                })
                                 await log(text, "agent")
                     elif event_type == "tool.use":
                         tool_name = event_dict.get("tool", {}).get("name", "")
@@ -82,36 +98,11 @@ async def send_message(project_id: str, body: SendMessageRequest, user: dict = C
 
 
 @router.get("/{project_id}/messages")
-async def get_messages(project_id: str, user: dict = CurrentUser):
-    from opencode_ai import AsyncOpencode
-
-    from main import projects_store, sandboxes_store
-
+async def get_messages_endpoint(project_id: str, user: dict = CurrentUser):
     user_id = user["user_id"]
-    project = projects_store.get(user_id, {}).get(project_id)
+    project = await get_project(user_id, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    session_id = project.get("session_id")
-    sandbox = sandboxes_store.get(project_id)
-    if not session_id or not sandbox:
-        return {"messages": []}
-
-    try:
-        sandbox_base_url = await sandbox.get_preview_url(54321)
-        opencode_client = AsyncOpencode(base_url=sandbox_base_url)
-        messages = await opencode_client.session.messages(session_id)
-
-        formatted = []
-        for msg in messages:
-            msg_dict = msg.to_dict() if hasattr(msg, "to_dict") else vars(msg)
-            formatted.append({
-                "id": msg_dict.get("id", ""),
-                "role": msg_dict.get("role", "user"),
-                "content": msg_dict.get("content", ""),
-                "timestamp": msg_dict.get("created_at", ""),
-            })
-
-        return {"messages": formatted}
-    except Exception:
-        return {"messages": []}
+    messages = await get_messages(project_id)
+    return {"messages": messages}

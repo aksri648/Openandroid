@@ -4,15 +4,14 @@ from auth import CurrentUser
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
+from database import get_project
+
 router = APIRouter()
 
 
 @router.get("/{project_id}/tree")
 async def get_file_tree(project_id: str, user: dict = CurrentUser):
-    from main import projects_store
-
-    user_id = user["user_id"]
-    project = projects_store.get(user_id, {}).get(project_id)
+    project = await get_project(user["user_id"], project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -21,10 +20,9 @@ async def get_file_tree(project_id: str, user: dict = CurrentUser):
 
 @router.get("/{project_id}/content")
 async def get_file_content(project_id: str, path: str, user: dict = CurrentUser):
-    from main import projects_store, sandboxes_store
+    from main import sandboxes_store
 
-    user_id = user["user_id"]
-    project = projects_store.get(user_id, {}).get(project_id)
+    project = await get_project(user["user_id"], project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -42,10 +40,7 @@ async def get_file_content(project_id: str, path: str, user: dict = CurrentUser)
 
 @router.get("/{project_id}/download")
 async def download_project(project_id: str, user: dict = CurrentUser):
-    from main import projects_store
-
-    user_id = user["user_id"]
-    project = projects_store.get(user_id, {}).get(project_id)
+    project = await get_project(user["user_id"], project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 

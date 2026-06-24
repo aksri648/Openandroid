@@ -1,9 +1,10 @@
 import asyncio
-import json
 
 from auth import CurrentUser
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
+from database import get_settings, update_settings
 
 router = APIRouter()
 
@@ -41,7 +42,6 @@ async def install_skill(body: InstallSkillRequest, user: dict = CurrentUser):
     if not sandbox:
         raise HTTPException(status_code=400, detail="No active sandbox for this project")
 
-    # Validate command
     cmd = body.command.strip()
     dangerous = ["rm ", "curl | bash", "| sh", "| bash"]
     if any(d in cmd for d in dangerous) and "opencode.ai/install" not in cmd:
@@ -51,7 +51,6 @@ async def install_skill(body: InstallSkillRequest, user: dict = CurrentUser):
         result = await sandbox.process.exec(cmd, timeout=60)
         output = result.result or ""
 
-        # Stream output to log queue
         queue = log_queues.get(body.project_id)
         if queue:
             for line in output.split("\n"):
@@ -65,72 +64,55 @@ async def install_skill(body: InstallSkillRequest, user: dict = CurrentUser):
 
 @router.post("/mcp/add")
 async def add_mcp_server(body: AddMcpRequest, user: dict = CurrentUser):
-    from main import settings_store
-
     user_id = user["user_id"]
-    if user_id not in settings_store:
-        settings_store[user_id] = {"mcp_servers": [], "llm_providers": []}
+    settings = await get_settings(user_id)
 
-    settings_store[user_id]["mcp_servers"] = [
-        s for s in settings_store[user_id]["mcp_servers"] if s["name"] != body.name
-    ]
-    settings_store[user_id]["mcp_servers"].append(
-        {"name": body.name, "url": body.url, "config": body.config, "status": "unknown"}
-    )
+    mcp_servers = settings.get("mcp_servers", [])
+    mcp_servers = [s for s in mcp_servers if s["name"] != body.name]
+    mcp_servers.append({"name": body.name, "url": body.url, "config": body.config, "status": "unknown"})
 
+    await update_settings(user_id, {"mcp_servers": mcp_servers})
     return {"status": "added"}
 
 
 @router.get("/mcp/list")
 async def list_mcp_servers(user: dict = CurrentUser):
-    from main import settings_store
-
-    user_id = user["user_id"]
-    servers = settings_store.get(user_id, {}).get("mcp_servers", [])
-    return {"servers": servers}
+    settings = await get_settings(user["user_id"])
+    return {"servers": settings.get("mcp_servers", [])}
 
 
 @router.delete("/mcp/{name}")
 async def delete_mcp_server(name: str, user: dict = CurrentUser):
-    from main import settings_store
-
     user_id = user["user_id"]
-    if user_id in settings_store:
-        settings_store[user_id]["mcp_servers"] = [
-            s for s in settings_store[user_id]["mcp_servers"] if s["name"] != name
-        ]
+    settings = await get_settings(user_id)
+
+    mcp_servers = [s for s in settings.get("mcp_servers", []) if s["name"] != name]
+    await update_settings(user_id, {"mcp_servers": mcp_servers})
     return {"status": "deleted"}
 
 
 @router.post("/llm/add")
 async def add_llm_provider(body: AddLlmRequest, user: dict = CurrentUser):
-    from main import settings_store
-
     user_id = user["user_id"]
-    if user_id not in settings_store:
-        settings_store[user_id] = {"mcp_servers": [], "llm_providers": []}
+    settings = await get_settings(user_id)
 
-    # If setting as default, unset other defaults
+    llm_providers = settings.get("llm_providers", [])
+
     if body.is_default:
-        for p in settings_store[user_id]["llm_providers"]:
+        for p in llm_providers:
             p["is_default"] = False
 
-    # Remove existing provider with same name
-    settings_store[user_id]["llm_providers"] = [
-        p for p in settings_store[user_id]["llm_providers"] if p["provider_name"] != body.provider_name
-    ]
+    llm_providers = [p for p in llm_providers if p["provider_name"] != body.provider_name]
+    llm_providers.append(body.model_dump())
 
-    settings_store[user_id]["llm_providers"].append(body.model_dump())
+    await update_settings(user_id, {"llm_providers": llm_providers})
     return {"status": "saved"}
 
 
 @router.get("/llm/list")
 async def list_llm_providers(user: dict = CurrentUser):
-    from main import settings_store
-
-    user_id = user["user_id"]
-    providers = settings_store.get(user_id, {}).get("llm_providers", [])
-    return {"providers": providers}
+    settings = await get_settings(user["user_id"])
+    return {"providers": settings.get("llm_providers", [])}
 
 
 @router.post("/llm/test")
