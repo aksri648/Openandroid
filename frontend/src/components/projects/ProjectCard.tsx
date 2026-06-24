@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/clerk-react'
 import { Project } from '@/types'
 import { useProjectStore } from '@/store/projectStore'
 import { useLogStore } from '@/store/logStore'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, CheckCircle, AlertCircle, Clock, Package, Zap } from 'lucide-react'
@@ -49,10 +50,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     const token = await getToken()
     if (!token) return
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/projects/${project.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      await api.projects.delete(token, project.id)
       disconnectWebSocket(project.id)
       useProjectStore.getState().removeProject(project.id)
     } catch (e) {

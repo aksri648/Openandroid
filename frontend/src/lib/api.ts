@@ -1,7 +1,18 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { loadConfig, getConfig } from './config'
+
+// Initialize config on load
+let _baseUrl: string | null = null
+
+async function getBaseUrl(): Promise<string> {
+  if (_baseUrl) return _baseUrl
+  const config = await loadConfig()
+  _baseUrl = config.apiUrl
+  return _baseUrl
+}
 
 async function authFetch(path: string, options: RequestInit = {}, token: string) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = await getBaseUrl()
+  const res = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -14,6 +25,10 @@ async function authFetch(path: string, options: RequestInit = {}, token: string)
     throw new Error(error.detail || 'Request failed')
   }
   return res.json()
+}
+
+async function getBaseUrlSync(): Promise<string> {
+  return getBaseUrl()
 }
 
 export const api = {
@@ -49,7 +64,10 @@ export const api = {
     getTree: (token: string, projectId: string) => authFetch(`/api/files/${projectId}/tree`, {}, token),
     getContent: (token: string, projectId: string, path: string) =>
       authFetch(`/api/files/${projectId}/content?path=${encodeURIComponent(path)}`, {}, token),
-    downloadUrl: (projectId: string) => `${BASE_URL}/api/files/${projectId}/download`,
+    downloadUrl: async (projectId: string) => {
+      const baseUrl = await getBaseUrl()
+      return `${baseUrl}/api/files/${projectId}/download`
+    },
   },
   settings: {
     installSkill: (token: string, command: string, projectId: string) =>
@@ -65,4 +83,9 @@ export const api = {
     testLlm: (token: string, baseUrl: string, apiKey: string, model: string) =>
       authFetch('/api/settings/llm/test', { method: 'POST', body: JSON.stringify({ base_url: baseUrl, api_key: apiKey, model }) }, token),
   },
+}
+
+// Export a sync getter for components that need the URL immediately
+export function getApiBaseUrl(): string {
+  return getConfig().apiUrl
 }

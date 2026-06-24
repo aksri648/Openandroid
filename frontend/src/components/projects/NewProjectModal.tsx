@@ -3,14 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { useProjectStore } from '@/store/projectStore'
 import { useLogStore } from '@/store/logStore'
-import { api } from '@/lib/api'
+import { api, getApiBaseUrl } from '@/lib/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Shield, Zap } from 'lucide-react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 interface NewProjectModalProps {
   open: boolean
@@ -46,7 +44,7 @@ export default function NewProjectModal({ open, onOpenChange }: NewProjectModalP
         approvalMode,
       })
 
-      connectWebSocket(data.project_id, token, API_URL, () => {
+      connectWebSocket(data.project_id, token, getApiBaseUrl(), () => {
         useProjectStore.getState().updateProject(data.project_id, { status: 'done', zipReady: true })
       })
 

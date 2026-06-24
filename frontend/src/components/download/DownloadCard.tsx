@@ -5,8 +5,6 @@ import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Download, Share2, Loader2 } from 'lucide-react'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
 interface DownloadCardProps {
   project: Project
 }
@@ -33,7 +31,8 @@ export default function DownloadCard({ project }: DownloadCardProps) {
       const token = await getToken()
       if (!token) return
 
-      const response = await fetch(api.files.downloadUrl(project.id), {
+      const downloadUrl = await api.files.downloadUrl(project.id)
+      const response = await fetch(downloadUrl, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const blob = await response.blob()
