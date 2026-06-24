@@ -52,17 +52,21 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: npm run build
 
+      - name: Add Capacitor Android platform
+        working-directory: frontend
+        run: npx cap add android || true
+
       - name: Sync Capacitor Android
         working-directory: frontend
         run: npx cap sync android
 
       - name: Build Android APK (Release)
-        if: github.event.inputs.build_type != 'debug'
+        if: github.event.inputs.build_type != 'debug' || github.ref_type == 'tag'
         working-directory: frontend/android
         run: ./gradlew assembleRelease
 
       - name: Build Android APK (Debug)
-        if: github.event.inputs.build_type == 'debug'
+        if: github.event.inputs.build_type == 'debug' && github.ref_type != 'tag'
         working-directory: frontend/android
         run: ./gradlew assembleDebug
 
