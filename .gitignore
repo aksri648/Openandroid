@@ -1,0 +1,13 @@
+node_modules/
+venv/
+dist/
+build/
+android/
+*.zip
+.env
+.env.local
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+.opencode/
