@@ -1,4 +1,6 @@
 import { ReactNode } from 'react'
+import { SignOutButton } from '@clerk/clerk-react'
+import { LogOut } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
 import BottomTabBar from './BottomTabBar'
 
@@ -22,6 +24,11 @@ export default function AppShell({ children }: AppShellProps) {
               {activeProject.name}
             </span>
           )}
+          <SignOutButton>
+            <button className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+              <LogOut size={16} />
+            </button>
+          </SignOutButton>
         </div>
       </header>
 

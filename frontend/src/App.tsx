@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth, SignIn } from '@clerk/clerk-react'
 import AppShell from './components/layout/AppShell'
 import ProjectsPage from './pages/ProjectsPage'
 import ChatPage from './pages/ChatPage'
@@ -19,8 +19,8 @@ export default function App() {
     )
   if (!isSignedIn)
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Please sign in to continue.</p>
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <SignIn routing="hash" />
       </div>
     )
 
