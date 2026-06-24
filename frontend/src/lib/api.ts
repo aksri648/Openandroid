@@ -1,7 +1,8 @@
 import { loadConfig, getConfig } from './config'
 
-// Initialize config on load
 let _baseUrl: string | null = null
+
+const DEV_TOKEN = 'dev-token'
 
 async function getBaseUrl(): Promise<string> {
   if (_baseUrl) return _baseUrl
@@ -10,13 +11,13 @@ async function getBaseUrl(): Promise<string> {
   return _baseUrl
 }
 
-async function authFetch(path: string, options: RequestInit = {}, token: string) {
+async function authFetch(path: string, options: RequestInit = {}, token?: string) {
   const baseUrl = await getBaseUrl()
   const res = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token || DEV_TOKEN}`,
       ...options.headers,
     },
   })
@@ -25,10 +26,6 @@ async function authFetch(path: string, options: RequestInit = {}, token: string)
     throw new Error(error.detail || 'Request failed')
   }
   return res.json()
-}
-
-async function getBaseUrlSync(): Promise<string> {
-  return getBaseUrl()
 }
 
 export const api = {
@@ -85,7 +82,6 @@ export const api = {
   },
 }
 
-// Export a sync getter for components that need the URL immediately
 export function getApiBaseUrl(): string {
   return getConfig().apiUrl
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
 import { useProjectStore } from '@/store/projectStore'
 import { useLogStore } from '@/store/logStore'
 import { api, getApiBaseUrl } from '@/lib/api'
@@ -9,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Shield, Zap } from 'lucide-react'
+
+const TOKEN = 'dev-token'
 
 interface NewProjectModalProps {
   open: boolean
@@ -21,7 +22,6 @@ export default function NewProjectModal({ open, onOpenChange }: NewProjectModalP
   const [approvalMode, setApprovalMode] = useState(true)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { getToken } = useAuth()
   const { addProject } = useProjectStore()
   const { connectWebSocket } = useLogStore()
 
@@ -30,10 +30,7 @@ export default function NewProjectModal({ open, onOpenChange }: NewProjectModalP
     setLoading(true)
 
     try {
-      const token = await getToken()
-      if (!token) return
-
-      const data = await api.projects.create(token, name, prompt, approvalMode)
+      const data = await api.projects.create(TOKEN, name, prompt, approvalMode)
 
       addProject({
         id: data.project_id,
@@ -44,7 +41,7 @@ export default function NewProjectModal({ open, onOpenChange }: NewProjectModalP
         approvalMode,
       })
 
-      connectWebSocket(data.project_id, token, getApiBaseUrl(), () => {
+      connectWebSocket(data.project_id, TOKEN, getApiBaseUrl(), () => {
         useProjectStore.getState().updateProject(data.project_id, { status: 'done', zipReady: true })
       })
 
@@ -81,7 +78,6 @@ export default function NewProjectModal({ open, onOpenChange }: NewProjectModalP
             className="bg-background resize-none"
           />
 
-          {/* Approval mode toggle */}
           <div className="flex gap-2">
             <button
               type="button"

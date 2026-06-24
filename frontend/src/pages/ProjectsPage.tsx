@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { useProjectStore } from '@/store/projectStore'
 import ProjectCard from '@/components/projects/ProjectCard'
 import NewProjectModal from '@/components/projects/NewProjectModal'
 
+const TOKEN = 'dev-token'
+
 export default function ProjectsPage() {
   const { projects, fetchProjects } = useProjectStore()
-  const { getToken } = useAuth()
   const [showNew, setShowNew] = useState(false)
 
   useEffect(() => {
-    getToken().then((t) => {
-      if (t) fetchProjects(t)
-    })
+    fetchProjects(TOKEN)
   }, [])
 
   return (

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { useSettingsStore } from '@/store/settingsStore'
 import { api } from '@/lib/api'
 import { Input } from '@/components/ui/input'
@@ -7,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 
+const TOKEN = 'dev-token'
+
 export default function LlmProvidersSection() {
   const { llmProviders, addLlmProvider } = useSettingsStore()
-  const { getToken } = useAuth()
   const [name, setName] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -25,9 +25,7 @@ export default function LlmProvidersSection() {
     setTestResult(null)
 
     try {
-      const token = await getToken()
-      if (!token) return
-      const result = await api.settings.testLlm(token, baseUrl, apiKey, model)
+      const result = await api.settings.testLlm(TOKEN, baseUrl, apiKey, model)
       setTestResult({ ok: result.ok, latency: result.latency_ms, error: result.error })
     } catch (e: any) {
       setTestResult({ ok: false, error: e.message })
@@ -41,9 +39,7 @@ export default function LlmProvidersSection() {
     setSaving(true)
 
     try {
-      const token = await getToken()
-      if (!token) return
-      await addLlmProvider(token, {
+      await addLlmProvider(TOKEN, {
         provider_name: name,
         base_url: baseUrl,
         api_key: apiKey,

@@ -1,22 +1,20 @@
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { useSettingsStore } from '@/store/settingsStore'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 
+const TOKEN = 'dev-token'
+
 export default function McpServersSection() {
   const { mcpServers, addMcpServer, removeMcpServer } = useSettingsStore()
-  const { getToken } = useAuth()
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [config, setConfig] = useState('')
 
   const handleAdd = async () => {
     if (!name.trim() || !url.trim()) return
-    const token = await getToken()
-    if (!token) return
 
     let parsedConfig: Record<string, unknown> = {}
     try {
@@ -25,16 +23,14 @@ export default function McpServersSection() {
       return
     }
 
-    await addMcpServer(token, name, url, parsedConfig)
+    await addMcpServer(TOKEN, name, url, parsedConfig)
     setName('')
     setUrl('')
     setConfig('')
   }
 
   const handleDelete = async (serverName: string) => {
-    const token = await getToken()
-    if (!token) return
-    await removeMcpServer(token, serverName)
+    await removeMcpServer(TOKEN, serverName)
   }
 
   return (

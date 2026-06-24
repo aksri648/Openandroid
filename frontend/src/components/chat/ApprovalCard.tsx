@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { PendingAction } from '@/types'
 import { api } from '@/lib/api'
 import { useLogStore } from '@/store/logStore'
@@ -7,6 +6,8 @@ import { useProjectStore } from '@/store/projectStore'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Check, X, FileCode2, Terminal, FileEdit, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+
+const TOKEN = 'dev-token'
 
 interface ApprovalCardProps {
   action: PendingAction
@@ -43,7 +44,6 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
   const [editing, setEditing] = useState(false)
   const [editedContent, setEditedContent] = useState(action.preview.content || '')
   const [processing, setProcessing] = useState(false)
-  const { getToken } = useAuth()
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const { removePendingApproval } = useLogStore()
 
@@ -52,11 +52,8 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
     setProcessing(true)
 
     try {
-      const token = await getToken()
-      if (!token) return
-
       await api.projects.approve(
-        token,
+        TOKEN,
         activeProjectId,
         action.id,
         withEdit ? editedContent : undefined,
@@ -74,10 +71,7 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
     setProcessing(true)
 
     try {
-      const token = await getToken()
-      if (!token) return
-
-      await api.projects.reject(token, activeProjectId, action.id, 'Rejected by user')
+      await api.projects.reject(TOKEN, activeProjectId, action.id, 'Rejected by user')
       removePendingApproval(activeProjectId, action.id)
     } catch (e) {
       console.error('Rejection failed:', e)
@@ -91,7 +85,6 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
 
   return (
     <div className="border border-primary/30 rounded-lg bg-primary/5 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         {icon}
         <span className="text-xs font-medium flex-1 truncate">{label}</span>
@@ -105,7 +98,6 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
         </Button>
       </div>
 
-      {/* Preview (collapsible) */}
       {expanded && (
         <div className="px-3 pb-2">
           {action.preview.type === 'command' ? (
@@ -131,7 +123,6 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
         </div>
       )}
 
-      {/* Edit area (for file writes) */}
       {editing && action.preview.type === 'file_write' && (
         <div className="px-3 pb-2">
           <Textarea
@@ -143,7 +134,6 @@ export default function ApprovalCard({ action }: ApprovalCardProps) {
         </div>
       )}
 
-      {/* Action buttons */}
       <div className="flex gap-1.5 px-3 pb-2">
         <Button
           onClick={() => handleApprove(false)}

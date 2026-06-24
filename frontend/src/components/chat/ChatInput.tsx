@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { useChatStore } from '@/store/chatStore'
 import { api } from '@/lib/api'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Send } from 'lucide-react'
+
+const TOKEN = 'dev-token'
 
 interface ChatInputProps {
   projectId: string | null
@@ -14,7 +15,6 @@ interface ChatInputProps {
 export default function ChatInput({ projectId, projectStatus }: ChatInputProps) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
-  const { getToken } = useAuth()
   const { addMessage } = useChatStore()
 
   const isRunning = projectStatus === 'running' || projectStatus === 'initializing' || projectStatus === 'creating_sandbox' || projectStatus === 'installing'
@@ -26,9 +26,6 @@ export default function ChatInput({ projectId, projectStatus }: ChatInputProps) 
     setSending(true)
 
     try {
-      const token = await getToken()
-      if (!token) return
-
       addMessage(projectId, {
         id: `user-${Date.now()}`,
         role: 'user',
@@ -36,7 +33,7 @@ export default function ChatInput({ projectId, projectStatus }: ChatInputProps) 
         timestamp: new Date().toISOString(),
       })
 
-      await api.chat.sendMessage(token, projectId, msg)
+      await api.chat.sendMessage(TOKEN, projectId, msg)
     } catch (e) {
       console.error('Failed to send:', e)
     } finally {

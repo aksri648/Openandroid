@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { api } from '@/lib/api'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
+const TOKEN = 'dev-token'
 
 interface FileViewerProps {
   projectId: string
@@ -38,28 +39,24 @@ export default function FileViewer({ projectId, filePath, onBack }: FileViewerPr
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [highlighted, setHighlighted] = useState('')
-  const { getToken } = useAuth()
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(false)
 
-    getToken().then((token) => {
-      if (!token || cancelled) return
-      api.files
-        .getContent(token, projectId, filePath)
-        .then((data) => {
-          if (cancelled) return
-          setContent(data.content)
-          setLoading(false)
-        })
-        .catch(() => {
-          if (cancelled) return
-          setError(true)
-          setLoading(false)
-        })
-    })
+    api.files
+      .getContent(TOKEN, projectId, filePath)
+      .then((data) => {
+        if (cancelled) return
+        setContent(data.content)
+        setLoading(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setError(true)
+        setLoading(false)
+      })
 
     return () => {
       cancelled = true
@@ -100,7 +97,6 @@ export default function FileViewer({ projectId, filePath, onBack }: FileViewerPr
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
         <Button variant="ghost" size="icon" onClick={onBack} className="h-6 w-6 md:hidden">
           <ArrowLeft className="h-4 w-4" />
@@ -111,7 +107,6 @@ export default function FileViewer({ projectId, filePath, onBack }: FileViewerPr
         </span>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto p-3">
         {loading ? (
           <div className="flex items-center justify-center h-full">

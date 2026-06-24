@@ -1,22 +1,18 @@
 import { useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { useSettingsStore } from '@/store/settingsStore'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import AgentSkillsSection from '@/components/settings/AgentSkillsSection'
 import McpServersSection from '@/components/settings/McpServersSection'
 import LlmProvidersSection from '@/components/settings/LlmProvidersSection'
 
+const TOKEN = 'dev-token'
+
 export default function SettingsPage() {
-  const { getToken } = useAuth()
   const { fetchMcpServers, fetchLlmProviders } = useSettingsStore()
 
   useEffect(() => {
-    getToken().then((t) => {
-      if (t) {
-        fetchMcpServers(t)
-        fetchLlmProviders(t)
-      }
-    })
+    fetchMcpServers(TOKEN)
+    fetchLlmProviders(TOKEN)
   }, [])
 
   return (

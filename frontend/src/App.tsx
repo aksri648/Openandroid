@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth, SignIn } from '@clerk/clerk-react'
 import AppShell from './components/layout/AppShell'
 import ProjectsPage from './pages/ProjectsPage'
 import ChatPage from './pages/ChatPage'
@@ -9,21 +8,6 @@ import DownloadPage from './pages/DownloadPage'
 import SettingsPage from './pages/SettingsPage'
 
 export default function App() {
-  const { isSignedIn, isLoaded } = useAuth()
-
-  if (!isLoaded)
-    return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        Loading...
-      </div>
-    )
-  if (!isSignedIn)
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <SignIn routing="hash" />
-      </div>
-    )
-
   return (
     <BrowserRouter>
       <AppShell>

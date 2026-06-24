@@ -1,6 +1,4 @@
 import { ReactNode } from 'react'
-import { SignOutButton } from '@clerk/clerk-react'
-import { LogOut } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
 import BottomTabBar from './BottomTabBar'
 
@@ -15,7 +13,6 @@ export default function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
       <header className="flex items-center justify-between px-4 h-12 border-b border-border bg-card shrink-0">
         <span className="text-primary font-bold text-sm">OpenCode Mobile</span>
         <div className="flex items-center gap-2">
@@ -24,18 +21,9 @@ export default function AppShell({ children }: AppShellProps) {
               {activeProject.name}
             </span>
           )}
-          <SignOutButton>
-            <button className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut size={16} />
-            </button>
-          </SignOutButton>
         </div>
       </header>
-
-      {/* Content */}
       <main className="flex-1 overflow-y-auto pb-16">{children}</main>
-
-      {/* Tab Bar */}
       <BottomTabBar />
     </div>
   )

@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
 import { Project } from '@/types'
 import { useProjectStore } from '@/store/projectStore'
 import { useLogStore } from '@/store/logStore'
@@ -7,6 +6,8 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, CheckCircle, AlertCircle, Clock, Package, Zap } from 'lucide-react'
+
+const TOKEN = 'dev-token'
 
 const statusConfig: Record<string, { label: string; variant: string; icon: React.ReactNode }> = {
   initializing: { label: 'Initializing', variant: 'outline', icon: <Loader2 className="animate-spin h-3 w-3" /> },
@@ -37,7 +38,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const navigate = useNavigate()
   const { setActiveProject } = useProjectStore()
   const { disconnectWebSocket } = useLogStore()
-  const { getToken } = useAuth()
   const config = statusConfig[project.status] || statusConfig.initializing
 
   const handleClick = () => {
@@ -47,10 +47,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    const token = await getToken()
-    if (!token) return
     try {
-      await api.projects.delete(token, project.id)
+      await api.projects.delete(TOKEN, project.id)
       disconnectWebSocket(project.id)
       useProjectStore.getState().removeProject(project.id)
     } catch (e) {

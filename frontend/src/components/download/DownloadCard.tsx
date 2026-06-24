@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { Project } from '@/types'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Download, Share2, Loader2 } from 'lucide-react'
+
+const TOKEN = 'dev-token'
 
 interface DownloadCardProps {
   project: Project
@@ -23,21 +24,16 @@ function blobToBase64(blob: Blob): Promise<string> {
 
 export default function DownloadCard({ project }: DownloadCardProps) {
   const [downloading, setDownloading] = useState(false)
-  const { getToken } = useAuth()
 
   const handleDownload = async () => {
     setDownloading(true)
     try {
-      const token = await getToken()
-      if (!token) return
-
       const downloadUrl = await api.files.downloadUrl(project.id)
       const response = await fetch(downloadUrl, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${TOKEN}` },
       })
       const blob = await response.blob()
 
-      // Check if running in Capacitor
       const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor
 
       if (isCapacitor) {
@@ -49,7 +45,6 @@ export default function DownloadCard({ project }: DownloadCardProps) {
           directory: Directory.Documents,
         })
       } else {
-        // Web fallback — direct download
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url

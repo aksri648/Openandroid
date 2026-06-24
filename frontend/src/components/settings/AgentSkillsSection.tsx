@@ -1,17 +1,17 @@
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import { useProjectStore } from '@/store/projectStore'
 import { api } from '@/lib/api'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 
+const TOKEN = 'dev-token'
+
 export default function AgentSkillsSection() {
   const [command, setCommand] = useState('')
   const [output, setOutput] = useState('')
   const [isInstalling, setIsInstalling] = useState(false)
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
-  const { getToken } = useAuth()
 
   const handleInstall = async () => {
     if (!command.trim() || !activeProjectId) return
@@ -19,10 +19,7 @@ export default function AgentSkillsSection() {
     setOutput('')
 
     try {
-      const token = await getToken()
-      if (!token) return
-
-      const result = await api.settings.installSkill(token, command, activeProjectId)
+      const result = await api.settings.installSkill(TOKEN, command, activeProjectId)
       setOutput(result.output || 'No output')
     } catch (e: any) {
       setOutput(`Error: ${e.message}`)

@@ -15,7 +15,6 @@
     "@capacitor/core": "^6.0.0",
     "@capacitor/filesystem": "^6.0.0",
     "@capacitor/share": "^6.0.0",
-    "@clerk/clerk-react": "latest",
     "@fontsource-variable/geist": "^5.2.9",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
